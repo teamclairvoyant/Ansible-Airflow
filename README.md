@@ -17,7 +17,7 @@ Pre-quisite :
     
     
 Download this file and Run below command from Ansible controller node : 
-# ansible-playbook enableSystemDscript.yaml   --limit <NEW_AIRFLOW_NODE> --private-key <PEM_FILE_PATH> -vv
+#ansible-playbook enableSystemDscript.yaml   --limit <NEW_AIRFLOW_NODE> --private-key <PEM_FILE_PATH> -vv
 
 Replace 
 <NEW_AIRFLOW_NODE> with actual hostname of airflow worker node which you are planning to add to airflow cluster. 
