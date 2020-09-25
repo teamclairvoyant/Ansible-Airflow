@@ -50,3 +50,6 @@ Replace
 <NEW_AIRFLOW_NODE> with actual hostname of airflow worker node which you are planning to add to airflow cluster. 
 <PEM_FILE_PATH> : this is path to pem file which is used login to worker node 
 
+
+Note : "apache-airflow-1.10.9.tar.gz" is available at wget https://github.com/apache/airflow/releases/download/1.10.9/apache-airflow-1.10.9.tar.gz
+
