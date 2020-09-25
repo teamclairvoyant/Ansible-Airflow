@@ -56,7 +56,7 @@
         dest: /lib/systemd/system/airflow-worker.service
         owner: root
         group: root
-        mode: 0555
+        mode: 0644
         backup: yes
     - name: Airflow /etc/systemd/airflow
       copy:
