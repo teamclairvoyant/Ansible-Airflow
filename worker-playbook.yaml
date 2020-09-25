@@ -1,0 +1,116 @@
+- hosts: all
+  user: centos
+  become: True
+  tasks:
+    - name: Install OS packages which are needed for Airflow setup ...
+      yum:
+        name: "{{ packages }}"
+        state: latest
+      vars:
+        packages:
+          - gcc
+          - postgresql
+          - postgresql-devel
+          - python3
+          - python3-devel
+
+    - name: Add user "airflow" to worker/remote server with "/var/lib/airflow" as home directory
+      user:
+        name: airflow
+        create_home: yes
+        home: /var/lib/airflow
+
+    - name: Create files and directories needed for Airflow setup  if it does not exist
+      file:
+        path: /var/lib/airflow/dags
+        state: directory
+        directory_mode: '0755'
+        owner: airflow
+        group: airflow
+    - name: Airflow log directory
+      file:
+        path: /var/log/airflow
+        state: directory
+        directory_mode: '0755'
+        owner: airflow
+        group: airflow
+    - name: Create Python virtual environment for Airflow setup
+      file:
+        path: /var/lib/airflow/.venv
+        state: directory
+        directory_mode: '0755'
+        owner: root
+        group: root
+    - name: Airflow profile file to set AIRFLOW_HOME environment variable 
+      copy:
+        dest: /etc/profile.d/airflow.sh
+        owner: root
+        group: root
+        mode: 0555
+        backup: yes
+        content: |
+          export AIRFLOW_HOME=/var/lib/airflow
+    - name: Airflow worker systemD script
+      copy:
+        src: ./files/airflow-worker.service
+        dest: /lib/systemd/system/airflow-worker.service
+        owner: root
+        group: root
+        mode: 0555
+        backup: yes
+    - name: Airflow /etc/systemd/airflow
+      copy:
+        src: ./files/airflow
+        dest: /etc/systemd/airflow
+        owner: root
+        group: root
+        mode: 0555
+        backup: yes
+
+    - name: Create virtual env for airflow installation and Install all needed packages 
+      command:
+        cmd: python3 -m venv /var/lib/airflow/.venv/airflow_env
+    - name: Upgrade pip and install airflow packages
+      shell: |
+        source /var/lib/airflow/.venv/airflow_env/bin/activate
+        pip install pip --upgrade
+        pip install alembic==1.0
+        pip install apache-airflow==1.10.9
+        pip install apache-airflow[celery]==1.10.9
+        pip install apache-airflow[rabbitmq]==1.10.9
+        pip uninstall -y SQLAlchemy
+        pip install SQLAlchemy==1.3.15
+        pip install psycopg2
+        pip install cryptography
+
+    - name: Airflow configuration file
+      copy:
+        src: ./files/airflow.cfg
+        dest: /var/lib/airflow/airflow.cfg
+        owner: airflow
+        group: airflow
+        mode: 0711
+        backup: yes
+
+
+    - name: Create Airflow PID directory if it does not exist
+      file:
+        path: /run/airflow
+        state: directory
+        owner: airflow
+        group: airflow
+
+
+    - name: Create a symlink to /bin/airflow
+      file:
+        src: /var/lib/airflow/.venv/airflow_env/bin/airflow
+        dest: /bin/airflow
+        state: link
+
+    - name: Enable and start Airflow worker service and ensure it is not masked
+      systemd:
+        name: airflow-worker
+        enabled: yes
+        masked: no
+        state: started
+        daemon_reload: yes
